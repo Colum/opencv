@@ -6,7 +6,7 @@ import math
 class LaneDetect:
 
     @staticmethod
-    def process(frame):
+    def process(frame, og_frame):
         lines = cv2.HoughLinesP(frame, rho=6, theta=np.pi / 60,
             threshold=160, lines=np.array([]), minLineLength=40,
             maxLineGap=25)
@@ -32,16 +32,20 @@ class LaneDetect:
                     right_line_x.extend([x1, x2])
                     right_line_y.extend([y1, y2])
 
-        frame_with_line = LaneDetect.calculate_line(frame, left_line_y, left_line_x)
-        frame_with_lines = LaneDetect.calculate_line(frame_with_line, right_line_y, right_line_x)
+        left_lane = LaneDetect.calculate_line(frame, left_line_y, left_line_x)
+        right_lane = LaneDetect.calculate_line(frame, right_line_y, right_line_x)
+        both_lanes = cv2.addWeighted(left_lane, 1, right_lane, 1.0, 0.0)
 
-        return frame_with_lines
+        lanes_rgb = cv2.cvtColor(both_lanes, cv2.COLOR_GRAY2RGB)
+        og_frame_with_lanes = cv2.addWeighted(lanes_rgb, 1, og_frame, 1.0, 0.0)
+
+        return og_frame_with_lanes
 
     @staticmethod
     def calculate_line(frame, line_y, line_x):
 
         if len(line_x) == 0 or len(line_y) == 0:
-            return frame
+            return np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8,)
 
         min_y = frame.shape[0] * (3 / 5) # shape[0] is frame height
         max_y = frame.shape[0]
@@ -65,6 +69,4 @@ class LaneDetect:
 
         x1, y1, x2, y2 = line
         cv2.line(line_image, (x1, y1), (x2, y2), color, thickness)
-
-        img = cv2.addWeighted(frame_cp, 0.8, line_image, 1.0, 0.0)
-        return img
+        return line_image
