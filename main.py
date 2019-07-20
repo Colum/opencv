@@ -11,7 +11,7 @@ def read_frames():
     mask = NonRoiMask()
     lane = LaneDetect()
 
-    cap = cv2.VideoCapture('data/wavre.mp4')  # todo video as arg
+    cap = cv2.VideoCapture('data/e411.mp4')  # todo video as arg
 
     while(cap.isOpened()):
         ret, frame = cap.read()
