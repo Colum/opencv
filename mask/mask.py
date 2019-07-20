@@ -2,17 +2,24 @@ import numpy as np
 import cv2
 
 
-
 class NonRoiMask:
 
-    @staticmethod
-    def process(frame):
+    def __init__(self):
+        self.ref_point = None
+        self.frame = None
+
+    def process(self, frame, og_frame):
+        if self.ref_point is None:
+            print('Click to select ref point, then press enter')
+            self.frame = frame
+            cv2.imshow('Main', og_frame)
+            cv2.setMouseCallback('Main', self.select_ref_point)
+            cv2.waitKey(0)
+
         height = frame.shape[0]
         width = frame.shape[1]
 
-        mask_ctr = int(height / 2 + 0.15 * height)
-
-        region_of_interest_vertices = [(0, height), (width / 2, mask_ctr),(width, height),]
+        region_of_interest_vertices = [(0, height), (self.ref_point[0], self.ref_point[1]), (width, height),]
         vertices = np.array([region_of_interest_vertices], np.int32)
 
         mask = np.zeros_like(frame)
@@ -21,12 +28,20 @@ class NonRoiMask:
         cv2.fillPoly(mask, vertices, match_mask_color)
 
         masked_image = cv2.bitwise_and(frame, mask)
-        return masked_image, mask_ctr
+        return masked_image
 
-    @staticmethod
-    def add_mask_guideline(frame, mask_ctr):
-        y = mask_ctr
-        x = frame.shape[1] // 2
-        radius = 5
+    def add_mask_guideline(self, frame):
+        y = self.ref_point[1]
+        x = self.ref_point[0]
+        radius = 10
         cv2.circle(frame, (x, y), radius, (245, 215, 66), -1)
         return frame
+
+    def select_ref_point(self, event, x, y, flags, param):
+        if self.ref_point is not None:
+            return
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.ref_point = (x, y)
+
+

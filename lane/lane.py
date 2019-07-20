@@ -6,7 +6,7 @@ import math
 class LaneDetect:
 
     @staticmethod
-    def process(frame, og_frame):
+    def process(frame, og_frame, min_y):
         lines = cv2.HoughLinesP(frame, rho=6, theta=np.pi / 60,
             threshold=160, lines=np.array([]), minLineLength=40,
             maxLineGap=25)
@@ -16,9 +16,12 @@ class LaneDetect:
         right_line_x = []
         right_line_y = []
 
+        if lines is None:
+            return og_frame
+
         for line in lines:
             for x1, y1, x2, y2 in line:
-                if x1 == x2:
+                if x1 - x2 == 0:
                     continue
 
                 slope = (y2 - y1) / (x2 - x1)
@@ -32,8 +35,8 @@ class LaneDetect:
                     right_line_x.extend([x1, x2])
                     right_line_y.extend([y1, y2])
 
-        left_lane = LaneDetect.calculate_line(frame, left_line_y, left_line_x)
-        right_lane = LaneDetect.calculate_line(frame, right_line_y, right_line_x)
+        left_lane = LaneDetect.calculate_line(frame, left_line_y, left_line_x, min_y)
+        right_lane = LaneDetect.calculate_line(frame, right_line_y, right_line_x, min_y)
         both_lanes = cv2.addWeighted(left_lane, 1, right_lane, 1.0, 0.0)
 
         lanes_rgb = cv2.cvtColor(both_lanes, cv2.COLOR_GRAY2RGB)
@@ -42,12 +45,12 @@ class LaneDetect:
         return og_frame_with_lanes
 
     @staticmethod
-    def calculate_line(frame, line_y, line_x):
+    def calculate_line(frame, line_y, line_x, min_y):
 
         if len(line_x) == 0 or len(line_y) == 0:
             return np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8,)
 
-        min_y = frame.shape[0] * (3 / 5) # shape[0] is frame height
+        min_y = min_y
         max_y = frame.shape[0]
 
         poly_line = np.poly1d(np.polyfit(line_y, line_x, deg=1))
