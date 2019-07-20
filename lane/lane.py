@@ -50,7 +50,6 @@ class LaneDetect:
         if len(line_x) == 0 or len(line_y) == 0:
             return np.zeros((frame.shape[0], frame.shape[1]), dtype=np.uint8,)
 
-        min_y = min_y
         max_y = frame.shape[0]
 
         poly_line = np.poly1d(np.polyfit(line_y, line_x, deg=1))
